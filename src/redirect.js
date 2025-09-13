@@ -1,14 +1,12 @@
 import { platforms, detectPlatformParam } from './config/platforms.js';
 
 (function(){
-  const startTs = Date.now();
   const params = new URLSearchParams(window.location.search);
   const debug = params.get('debug') === '1';
   const intentMode = params.get('intent') === 'web';
   const delayParam = parseInt(params.get('delay')||'',10);
-  const delay = isFinite(delayParam)? Math.min(2000, Math.max(200, delayParam)) : 800;
-
-  function byPlatformName(name) { return platforms.find(p=>p.platform===name || p.keys.includes(name)); }
+  // Default fallback delay shortened for snappier behaviour; clamp between 150-2000ms
+  const delay = isFinite(delayParam) ? Math.min(2000, Math.max(150, delayParam)) : 350;
 
   const platformParam = detectPlatformParam(params);
   const outputEl = document.getElementById('status');
@@ -48,29 +46,57 @@ import { platforms, detectPlatformParam } from './config/platforms.js';
     return;
   }
 
-  // Attempt deep link
+  // Attempt deep link: try each candidate quickly (staggered) and fall back to the web URL.
+  // Use a short stagger so the OS/browser can pick up the first scheme that works.
   let navigated = false;
-  function tryNext(index) {
-    if (index >= descriptor.appUrlCandidates.length) return;
+  const attemptTimers = [];
+  const iframeHandles = [];
+
+  function attemptOpen(url) {
+    // Primary approach: set location.href
+    try { window.location.href = url; } catch (e) { /* ignore */ }
+
+    // Secondary approach: inject a hidden iframe as a fallback trigger for some environments
     try {
-      window.location = descriptor.appUrlCandidates[index];
-    } catch (e) { /* ignore */ }
+      const ifr = document.createElement('iframe');
+      ifr.style.display = 'none';
+      ifr.src = url;
+      document.body.appendChild(ifr);
+      iframeHandles.push(ifr);
+      // remove iframe after a short time
+      setTimeout(() => {
+        try { ifr.parentNode && ifr.parentNode.removeChild(ifr); } catch (e) {}
+      }, 1000);
+    } catch (e) { /* ignore iframe errors */ }
   }
 
-  if (descriptor.appUrlCandidates.length) {
-    tryNext(0);
+  if (descriptor.appUrlCandidates && descriptor.appUrlCandidates.length) {
+    const stagger = 150; // ms between attempts
+    descriptor.appUrlCandidates.forEach((candidate, i) => {
+      const t = setTimeout(() => attemptOpen(candidate), i * stagger);
+      attemptTimers.push(t);
+    });
   }
 
-  const timer = setTimeout(()=>{
+  const fallbackTimer = setTimeout(() => {
     if (document.hidden) { navigated = true; }
     if (!navigated) {
-      window.location = descriptor.canonicalWebUrl;
+      try { window.location.href = descriptor.canonicalWebUrl; } catch (e) {}
     }
+    // cleanup any remaining iframes
+    iframeHandles.forEach(ifr => { try { ifr.parentNode && ifr.parentNode.removeChild(ifr); } catch (e) {} });
   }, delay);
 
-  // Visibility change heuristic
+  // Visibility change heuristic: if page becomes hidden, assume navigation succeeded
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { navigated = true; clearTimeout(timer); }
+    if (document.hidden) {
+      navigated = true;
+      // clear pending timers to avoid race conditions
+      attemptTimers.forEach(t => clearTimeout(t));
+      clearTimeout(fallbackTimer);
+      // cleanup any remaining iframes
+      iframeHandles.forEach(ifr => { try { ifr.parentNode && ifr.parentNode.removeChild(ifr); } catch (e) {} });
+    }
   });
 
 })();
