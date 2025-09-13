@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Universal Redirect Dashboard</title>
+  <meta name="description" content="Test and generate universal redirect URLs for social platforms">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --primary: #0066cc;
+      --primary-hover: #0052a3;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: #e5e7eb;
+      --bg-card: #ffffff;
+      --text-muted: #6b7280;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --border: #374151;
+        --bg-card: #1f2937;
+        --text-muted: #9ca3af;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 1rem;
+      line-height: 1.6;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: white;
+    }
+
+    .header h1 {
+      margin: 0 0 0.5rem;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .header p {
+      margin: 0;
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    select, input, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .result-section {
+      margin-top: 2rem;
+    }
+
+    .result-url {
+      background: #f8fafc;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.9rem;
+      word-break: break-all;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .platform-examples {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .example-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .example-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .example-card h4 {
+      margin: 0 0 0.5rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .example-card ul {
+      margin: 0;
+      padding-left: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    .status-valid { background: var(--success); }
+    .status-invalid { background: var(--error); }
+    .status-unknown { background: var(--warning); }
+
+    .help-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .validation-feedback {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+
+    .feedback-success {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .feedback-error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .debug-output {
+      background: #1f2937;
+      color: #f9fafb;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 0.5rem;
+      }
+      
+      .card {
+        padding: 1rem;
+      }
+      
+      .header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔗 Universal Redirect Dashboard</h1>
+      <p>Test and generate redirect URLs for YouTube, Instagram, X, LinkedIn, Facebook, and TikTok</p>
+    </div>
+
+    <div class="card">
+      <form id="redirect-form">
+        <div class="form-group">
+          <div class="form-row">
+            <div>
+              <label for="platform-select">Platform</label>
+              <select id="platform-select" name="platform">
+                <option value="youtube">🎥 YouTube</option>
+                <option value="instagram">📷 Instagram</option>
+                <option value="x">🐦 X (Twitter)</option>
+                <option value="linkedin">💼 LinkedIn</option>
+                <option value="facebook">👥 Facebook</option>
+                <option value="tiktok">🎵 TikTok</option>
+              </select>
+            </div>
+            <div>
+              <label for="url-input">URL or Content ID</label>
+              <input 
+                type="text" 
+                id="url-input" 
+                name="url" 
+                placeholder="Enter URL, video ID, @handle, or search term..."
+                autocomplete="off"
+              >
+              <div class="help-text">
+                Examples: https://youtu.be/dQw4w9WgXcQ, @username, video-id, or search terms
+              </div>
+              <div id="validation-feedback"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button type="submit" class="btn">
+            <span>🔗</span> Generate Redirect URL
+          </button>
+          <button type="button" class="btn btn-secondary" id="test-btn">
+            <span>🚀</span> Test Redirect
+          </button>
+          <button type="button" class="btn btn-secondary" id="debug-btn">
+            <span>🔍</span> Debug Parse
+          </button>
+          <button type="button" class="btn btn-secondary" id="clear-btn">
+            <span>🗑️</span> Clear
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="result-section" class="card" style="display: none;">
+      <h3>Generated Redirect URL</h3>
+      <div class="result-url" id="result-url">
+        <button class="copy-btn btn" id="copy-btn">Copy</button>
+        <div id="url-display"></div>
+      </div>
+      <div id="debug-output" class="debug-output" style="display: none;"></div>
+    </div>
+
+    <div class="card">
+      <h3>Platform Examples</h3>
+      <p class="help-text">Click any example below to auto-fill the form</p>
+      
+      <div class="platform-examples">
+        <div class="example-card" data-platform="youtube" data-url="https://www.youtube.com/channel/UCkwuhHD60GHZl5Mlnf-SWzA">
+          <h4>🎥 YouTube</h4>
+          <ul>
+            <li>Channel: https://www.youtube.com/channel/UCkwuhHD60GHZl5Mlnf-SWzA</li>
+            <li>Video ID: dQw4w9WgXcQ</li>
+            <li>Full URL: https://youtu.be/dQw4w9WgXcQ?t=42</li>
+            <li>Shorts: shorts:dQw4w9WgXcQ</li>
+          </ul>
+        </div>
+
+        <div class="example-card" data-platform="instagram" data-url="@natgeo">
+          <h4>📷 Instagram</h4>
+          <ul>
+            <li>Profile: @natgeo</li>
+            <li>Post: https://instagram.com/p/ABC123/</li>
+            <li>Reel: https://instagram.com/reel/XYZ456/</li>
+            <li>Shortcode: ABC123DEF456</li>
+          </ul>
+        </div>
+
+        <div class="example-card" data-platform="x" data-url="@elonmusk">
+          <h4>🐦 X (Twitter)</h4>
+          <ul>
+            <li>Profile: @elonmusk</li>
+            <li>Tweet: x.com/elonmusk/status/123456</li>
+            <li>Tweet ID: 1234567890123456789</li>
+            <li>Search: search:OpenAI</li>
+          </ul>
+        </div>
+
+        <div class="example-card" data-platform="linkedin" data-url="https://www.linkedin.com/in/rahulsharmadev">
+          <h4>💼 LinkedIn</h4>
+          <ul>
+            <li>Profile: https://www.linkedin.com/in/rahulsharmadev</li>
+            <li>Short form: in/rahulsharmadev</li>
+            <li>Company: company/microsoft</li>
+            <li>Post: posts/activity-123456</li>
+          </ul>
+        </div>
+
+        <div class="example-card" data-platform="facebook" data-url="zuck">
+          <h4>👥 Facebook</h4>
+          <ul>
+            <li>Page: zuck</li>
+            <li>Post: facebook.com/zuck/posts/123</li>
+            <li>Group: groups/123456789</li>
+            <li>Page ID: 123456789</li>
+          </ul>
+        </div>
+
+        <div class="example-card" data-platform="tiktok" data-url="@khaby.lame">
+          <h4>🎵 TikTok</h4>
+          <ul>
+            <li>Profile: @khaby.lame</li>
+            <li>Video: tiktok.com/@user/video/123</li>
+            <li>Video ID: 1234567890123456789</li>
+            <li>Search: search:dance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📖 How to Use</h3>
+      <ol>
+        <li><strong>Select Platform:</strong> Choose the social media platform you want to redirect to</li>
+        <li><strong>Enter Content:</strong> Paste a full URL, enter a content ID, @handle, or search term</li>
+        <li><strong>Generate URL:</strong> Click "Generate Redirect URL" to create your redirect link</li>
+        <li><strong>Test:</strong> Use "Test Redirect" to open the generated URL in a new tab</li>
+        <li><strong>Debug:</strong> Use "Debug Parse" to see how the input is interpreted</li>
+      </ol>
+      
+      <h4>🔧 Advanced Options</h4>
+      <p>Add these query parameters to your redirect URLs:</p>
+      <ul>
+        <li><code>debug=1</code> - Show parsing information instead of redirecting</li>
+        <li><code>intent=web</code> - Skip app deep link, go directly to web</li>
+        <li><code>delay=1000</code> - Custom fallback delay in milliseconds (200-2000)</li>
+      </ul>
+    </div>
+  </div>
+
+  <script type="module">
+    import { platforms, detectPlatformParam } from './src/config/platforms.js';
+
+    const form = document.getElementById('redirect-form');
+    const platformSelect = document.getElementById('platform-select');
+    const urlInput = document.getElementById('url-input');
+    const resultSection = document.getElementById('result-section');
+    const urlDisplay = document.getElementById('url-display');
+    const debugOutput = document.getElementById('debug-output');
+    const validationFeedback = document.getElementById('validation-feedback');
+    const copyBtn = document.getElementById('copy-btn');
+    const testBtn = document.getElementById('test-btn');
+    const debugBtn = document.getElementById('debug-btn');
+    const clearBtn = document.getElementById('clear-btn');
+
+    let currentRedirectUrl = '';
+    let currentDescriptor = null;
+
+    // Platform mapping
+    const platformMap = {
+      youtube: { param: 'youtube', emoji: '🎥' },
+      instagram: { param: 'instagram', emoji: '📷' },
+      x: { param: 'x', emoji: '🐦' },
+      linkedin: { param: 'linkedin', emoji: '💼' },
+      facebook: { param: 'facebook', emoji: '👥' },
+      tiktok: { param: 'tiktok', emoji: '🎵' }
+    };
+
+    // Real-time validation
+    urlInput.addEventListener('input', validateInput);
+    platformSelect.addEventListener('change', validateInput);
+
+    function validateInput() {
+      const platform = platformSelect.value;
+      const input = urlInput.value.trim();
+      
+      if (!input) {
+        showValidation('', '');
+        return;
+      }
+
+      try {
+        const platformObj = platforms.find(p => p.platform === platform || p.keys.includes(platform));
+        if (!platformObj) {
+          showValidation('Platform not found', 'error');
+          return;
+        }
+
+        const descriptor = platformObj.parse(input);
+        currentDescriptor = descriptor;
+
+        if (descriptor.type === 'unknown') {
+          showValidation('Could not parse input - will be treated as search', 'warning');
+        } else if (descriptor.canonicalWebUrl) {
+          showValidation(`✅ Detected as ${descriptor.platform} ${descriptor.type}`, 'success');
+        } else {
+          showValidation('Invalid input format', 'error');
+        }
+      } catch (error) {
+        showValidation(`Parse error: ${error.message}`, 'error');
+      }
+    }
+
+    function showValidation(message, type) {
+      validationFeedback.textContent = message;
+      validationFeedback.className = `validation-feedback ${type ? `feedback-${type === 'warning' ? 'error' : type}` : ''}`;
+      validationFeedback.style.display = message ? 'block' : 'none';
+    }
+
+    // Form submission
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      generateRedirectUrl();
+    });
+
+    function generateRedirectUrl() {
+      const platform = platformSelect.value;
+      const input = urlInput.value.trim();
+      
+      if (!input) {
+        alert('Please enter a URL or content ID');
+        return;
+      }
+
+      // Fix base URL calculation to avoid double slashes
+      let baseUrl = window.location.origin;
+      let pathname = window.location.pathname;
+      if (pathname.endsWith('/dashboard.html')) {
+        baseUrl += pathname.replace('/dashboard.html', '/');
+      } else if (pathname.endsWith('dashboard.html')) {
+        baseUrl += pathname.replace('dashboard.html', '');
+      } else {
+        baseUrl += pathname.endsWith('/') ? pathname : pathname + '/';
+      }
+      
+      const paramName = platformMap[platform]?.param || platform;
+      currentRedirectUrl = `${baseUrl}index.html?${paramName}=${encodeURIComponent(input)}`;
+      
+      urlDisplay.textContent = currentRedirectUrl;
+      resultSection.style.display = 'block';
+      debugOutput.style.display = 'none';
+
+      // Scroll to result
+      resultSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Copy functionality
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(currentRedirectUrl);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = currentRedirectUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        copyBtn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy';
+        }, 2000);
+      }
+    });
+
+    // Test redirect
+    testBtn.addEventListener('click', () => {
+      if (!currentRedirectUrl) {
+        generateRedirectUrl();
+      }
+      if (currentRedirectUrl) {
+        window.open(currentRedirectUrl, '_blank');
+      }
+    });
+
+    // Debug parse
+    debugBtn.addEventListener('click', () => {
+      if (!currentDescriptor) {
+        validateInput();
+      }
+      
+      if (currentDescriptor) {
+        debugOutput.textContent = JSON.stringify(currentDescriptor, null, 2);
+        debugOutput.style.display = 'block';
+        resultSection.style.display = 'block';
+        resultSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    // Clear form
+    clearBtn.addEventListener('click', () => {
+      urlInput.value = '';
+      platformSelect.selectedIndex = 0;
+      resultSection.style.display = 'none';
+      validationFeedback.style.display = 'none';
+      currentRedirectUrl = '';
+      currentDescriptor = null;
+      urlInput.focus();
+    });
+
+    // Example card clicks
+    document.querySelectorAll('.example-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const platform = card.dataset.platform;
+        const url = card.dataset.url;
+        
+        platformSelect.value = platform;
+        urlInput.value = url;
+        validateInput();
+        urlInput.focus();
+      });
+    });
+
+    // Initialize
+    urlInput.focus();
+  </script>
+</body>
+</html>
