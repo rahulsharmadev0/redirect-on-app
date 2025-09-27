@@ -87,6 +87,3 @@ You will see a JSON descriptor like:
 
 ## Local Development
 Simply open `redirect.html` with query params. Because deep link schemes may be blocked by desktop environment if app not installed, testing on real devices is recommended (use remote debugging / QR code).
-
-## License
-Specify a license if distributing publicly (currently unspecified).
